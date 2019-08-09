@@ -1,0 +1,9 @@
+{
+    "development": {
+        "database": "<database_name>",
+        "username": "<mysql_username>",
+        "password": "<mysql_password>",
+        "dialect": "mysql",
+        "logging": false
+    }
+}
