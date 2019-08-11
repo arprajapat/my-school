@@ -1,15 +1,19 @@
 var express = require('express');
 var router = express.Router();
 const models  = require('../models');
-const { distictSubjects, performace, getLatestYear, getBestWorstSubjects, batchSize} = require('../services/utils')
-const { getSentences } = require('../services/sentenceUtils');
-const { getMetrics, latestBestWorstSubjects } = require('../services/service');
-const { getCityMetrics } = require('../services/cityMetricService');
-const { offeredSubject, worstSubjects, bestSubjects, overyearsConsistancy } = require('../services/sentenceService');
+const { 
+    batchSize,
+    distictSubjects, 
+    getBestWorstSubjects,
+    getLatestYear, 
+    performace,
+} = require('../utils/utils');
+const { getSentences } = require('../utils/sentenceUtils');
 
-/* GET users listing. */
-router.get('/:school/city/:city', async (req, res, next) => {
+
+router.get('/:school', async (req, res, next) => {
     const { school } = req.params;
+    //todo: check if city is being passed in query params
     try {
         // check if school exist in multiple cities
         const distictCites = await models.Grade.aggregate('city', 'DISTINCT', {
@@ -60,19 +64,20 @@ router.get('/:school/city/:city', async (req, res, next) => {
             batchSize: batchSize(schoolData, latestYear)
         };
         // console.log(cityMetrics);
+
         const sentences = getSentences({school: schoolMetrics, city: cityMetrics});
         sentences.sort((a,b) => b.weight-a.weight);
-        // console.log(sentences)
+
         const index = Math.min(5, sentences.length)
         let paragraph = sentences
             .filter(sentence => sentence.weight >= sentences[index].weight)
             .map((sentence, idx) => `${idx+1}. ${sentence.message}`)
             .join('\n');
-        // console.log(paragraph)
-        res.end(paragraph)        
+
+        res.end(paragraph);    
     } catch (error) {
-        console.log(error)
-        res.status(500).send(error)
+        // console.log(error)
+        res.status(500).end('Internal Server Error')
     }
     
 });
