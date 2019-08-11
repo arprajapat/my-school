@@ -58,7 +58,7 @@
 
 
 // Used one methods;
-const distictSubject = (grades) => {
+const distictSubjects = (grades) => {
     return [... new Set(grades.map(grade => grade.subject))]
 };
  
@@ -108,7 +108,7 @@ const latestBestWorstSubjects = (grades) => {
 const getMetrics =  (grades) => {
     const { latestBestSubjects,  latestWorstSubjects } = latestBestWorstSubjects(grades);
     const result = {
-        subjectOffered: distictSubject(grades),
+        subjectOffered: distictSubjects(grades),
         overallPerformace: overallPerformace(grades),
         latestBestSubjects,
         latestWorstSubjects
@@ -123,4 +123,7 @@ const getMetrics =  (grades) => {
 
 module.exports = {
     getMetrics,
+    distictSubjects,
+    overallPerformace,
+    latestBestWorstSubjects
 }
