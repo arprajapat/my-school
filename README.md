@@ -1,5 +1,4 @@
 # my-school
-# my-cab
 
 Assumptions
 ---
