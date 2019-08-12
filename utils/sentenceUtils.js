@@ -1,19 +1,19 @@
-const subjectsList = (offeredSubject) => {
+const subjectsList = (offeredSubject, school, city, year) => {
     return {
-        message: `The school offer following subjects:\n${offeredSubject.join(',\n')}`,
+        message: `School "${school} - ${city}" offer following subjects in year ${year}:\n${offeredSubject.join(',\n')}`,
         weight: 1.0000
     }
 }
 
 const batchSize = (schoolBatchSize, cityBatchSize) => {
 
-    if(schoolBatchSize < cityBatchSize * 1.30 && schoolBatchSize > cityBatchSize * .70) {
+    if(schoolBatchSize < cityBatchSize * 1.25 && schoolBatchSize > cityBatchSize * .75) {
         return {
             message: `School runs classes in medium size batches, which has strength of ${cityBatchSize} students in a batch`,
             weight: 0.50
         }
     }
-    if(schoolBatchSize < cityBatchSize * .70) {
+    if(schoolBatchSize < cityBatchSize * .75) {
         return {
             message: `School keep classes in small batches compare to other schools in the city, so attention on students will be more`,
             weight: 0.75
@@ -27,10 +27,10 @@ const batchSize = (schoolBatchSize, cityBatchSize) => {
     }
 }
 
-const isOnlySchoolInCity = (schoolsCount) => {
+const isOnlySchoolInCity = (schoolsCount, cityName) => {
     if(schoolsCount==1) {
         return {
-            message: `This is only school in the city`,
+            message: `This is only school in city "${cityName}"`,
             weight: 1.00
         }
     }
@@ -68,18 +68,25 @@ const subjectCoverage = (data) => {
 
 const bestSubjects = (data) => {
     const subjects = data.school.bestSubjects;
+    const citySubjects = data.city.bestSubjects;
     if(subjects.length == 0) {
         return {
             message: 'School results not excelling in any subject',
             weight : .0001
         }
     }
-    
+
     let subjectList = '';
-    for (const elm of subjects) {
+    let exclusiveList = '';
+    for (let i = 0;i< subjects.length;i++) {
         if(subjectList != '') subjectList = subjectList + ', '
-        subjectList = subjectList + elm.subject;
+        subjectList = subjectList + `"${subjects[i].subject}"`;
+        if(citySubjects[i] && subjects[i].batchCount == citySubjects[i].batchCount) {
+            if(exclusiveList != '') exclusiveList = exclusiveList + ', '
+            exclusiveList = exclusiveList + `"${subjects[i].subject}"`;
+        }
     }
+
     const helpingVerb = subjects.length == 1 ? 'is' : 'are'
 
     if(data.school.isOnlySchoolInCity) {
@@ -89,7 +96,12 @@ const bestSubjects = (data) => {
         }
     }
     else {
-        // todo: add city comparision
+        if(exclusiveList!='') {
+            return {
+                message: `Top subject of the school ${helpingVerb} ${subjectList}. ${exclusiveList} are only offered by the school in "${data.city.name}"`,
+                weight: .80
+            }
+        }
         return {
             message: `Top graded subject of the school ${helpingVerb} ${subjectList}`,
             weight: .80
@@ -109,7 +121,7 @@ const worstSubjects = (data) => {
     let subjectList = '';
     for (const elm of subjects) {
         if(subjectList != '') subjectList = subjectList + ', '
-        subjectList = subjectList + elm.subject;
+        subjectList = subjectList + `"${elm.subject}"`;
     }
     const helpingVerb = subjects.length == 1 ? 'is' : 'are'
 
@@ -120,9 +132,8 @@ const worstSubjects = (data) => {
         }
     }
     else {
-        // todo: add city comparision
         return {
-            message: `There are lowest grades in ${subjectList}`,
+            message: `Worst performing subject ${helpingVerb} ${subjectList} in school`,
             weight: .80
         }
     }
@@ -131,6 +142,7 @@ const worstSubjects = (data) => {
 const gradeConsistancy = (data) => {
     const year = data.school.latestYear;
     const performace = data.school.performace
+    const cityPerformance = data.city.performace
     const LIMIT = 3;
     const latestYears = []; // last 3/LIMIT years
     for (let i = 0; i < LIMIT; i++) {
@@ -152,6 +164,13 @@ const gradeConsistancy = (data) => {
     }
     if(len==1) {
         // Todo: Compare with city
+        const diff = performace[year].avgGrade - cityPerformance[year].avgGrade;
+        if(Math.abs(diff) > cityPerformance[year].avgGrade*.1) {
+            return {
+                message: `Overall performance of all subjects in school in ${year} was ${Math.round(performace[year].avgGrade)}% where city average was ${Math.round(cityPerformance[year].avgGrade)} %`,
+                weight: .75
+            }
+        }
         return {
             message: `Overall performance of all subjects in school in ${year} was ${Math.round(performace[year].avgGrade)} percentage`,
             weight: .45
@@ -231,9 +250,9 @@ const studentConsistency = (data) => {
 
 const getSentences = (data) => {
     const results = [];
-    results.push(subjectsList(data.school.offeredSubject));
+    results.push(subjectsList(data.school.offeredSubject, data.school.name, data.city.name, data.school.latestYear));
     results.push(batchSize(data.school.batchSize, data.city.batchSize));
-    results.push(isOnlySchoolInCity(data.city.schoolsCount));
+    results.push(isOnlySchoolInCity(data.city.schoolsCount, data.city.name));
     results.push(subjectCoverage(data));
     results.push(bestSubjects(data));
     results.push(worstSubjects(data));

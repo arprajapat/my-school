@@ -72,27 +72,18 @@ const batchSize = (grades, year, subject) => {
     return Math.round(students/batchCount)
 }
 
-const getMetrics =  (grades) => {
-    const { latestBestSubjects,  latestWorstSubjects } = latestBestWorstSubjects(grades);
-    const result = {
-        subjectOffered: distictSubjects(grades),
-        overallPerformace: overallPerformace(grades),
-        latestBestSubjects,
-        latestWorstSubjects
-    }
-
-    // console.log(result);
-    // const obj = groupBy(grades, 'subject', 'year');
-    // const obj1 = groupBy(grades, 'year', 'subject');
-    return result;
+const getCorrespondingCitySubjects = (cityGrades, grades) => {
+    return grades.map(grade => {
+        return cityGrades.filter(cityGrade => cityGrade.subject == grade.subject 
+            && cityGrade.year == grade.year)[0]
+    });
 }
 
-
 module.exports = {
-    getMetrics,
-    distictSubjects,
-    performace,
-    getLatestYear,
+    batchSize,
+    distictSubjects, 
     getBestWorstSubjects,
-    batchSize
+    getCorrespondingCitySubjects,
+    getLatestYear,
+    performace,
 }
